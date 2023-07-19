@@ -1,0 +1,250 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(BudgetTrackerApp());
+}
+
+class BudgetTrackerApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Budget Tracker',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Budget Tracker'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            UserInfoSection(),
+            SizedBox(height: 16.0),
+            ExpenseTotalSection(),
+            SizedBox(height: 16.0),
+            CategoryListSection(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class UserInfoSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Replace with your user information logic or data retrieval
+    final user = {
+      'name': 'John Doe',
+      'email': 'johndoe@example.com',
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'User Information:',
+          style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 8.0),
+        Text('Name: ${user['name']}'),
+        Text('Email: ${user['email']}'),
+      ],
+    );
+  }
+}
+
+class ExpenseTotalSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Replace with your expense total logic or data retrieval
+    final expenseTotal = 500.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Expense Total:',
+          style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 8.0),
+        Text(
+          '\$${expenseTotal.toStringAsFixed(2)}',
+          style: TextStyle(fontSize: 24.0),
+        ),
+      ],
+    );
+  }
+}
+
+class CategoryListSection extends StatelessWidget {
+  final List<Map<String, dynamic>> categories = [
+    {'name': 'Food', 'budget': 300, 'expenses': []},
+    {'name': 'Transportation', 'budget': 200, 'expenses': []},
+    {'name': 'Entertainment', 'budget': 150, 'expenses': []},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Categories:',
+          style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 8.0),
+        ListView.builder(
+          shrinkWrap: true,
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final category = categories[index];
+            return ListTile(
+              title: Text(category['name']),
+              subtitle: Text('\$${category['budget'].toStringAsFixed(2)}'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ExpenseScreen(category: category),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class ExpenseScreen extends StatelessWidget {
+  final Map<String, dynamic> category;
+
+  ExpenseScreen({required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(category['name']),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: category['expenses'].length,
+              itemBuilder: (context, index) {
+                final expense = category['expenses'][index];
+                return ListTile(
+                  title: Text('Amount: \$${expense['amount'].toStringAsFixed(2)}'),
+                  subtitle: Text('Description: ${expense['description']}'),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => AddExpenseDialog(),
+          );
+        },
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class AddExpenseDialog extends StatefulWidget {
+  @override
+  _AddExpenseDialogState createState() => _AddExpenseDialogState();
+}
+
+class _AddExpenseDialogState extends State<AddExpenseDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _amountController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Add Expense'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _amountController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Amount',
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter an amount.';
+                }
+                return null;
+              },
+            ),
+            TextFormField(
+              controller: _descriptionController,
+              decoration: InputDecoration(
+                labelText: 'Description',
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a description.';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              final newExpense = {
+                'amount': double.parse(_amountController.text),
+                'description': _descriptionController.text,
+              };
+              // Update the category's expenses with the new expense
+              category['expenses'].add(newExpense);
+              Navigator.pop(context);
+            }
+          },
+          child: Text('Save'),
+        ),
+      ],
+    );
+  }
+}
